@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>图书管理系统</title>
+  <style>
+    * {margin: 10px; box-sizing: border-box;}
+    table {border-collapse: collapse; width: 800px;}
+    th,td {border:1px solid #999; padding:6px; text-align:center;}
+    .form-box {margin:20px 0;padding:15px;border:1px solid #ccc;width:800px;}
+  </style>
+</head>
+<body>
+  <h2>图书管理</h2>
+
+  <!-- 添加/编辑表单 -->
+  <div class="form-box">
+    <input type="hidden" id="bookId">
+    书名：<input type="text" id="bookName">
+    作者：<input type="text" id="author">
+    出版社：<input type="text" id="press">
+    分类：
+    <select id="typeSelect">
+    </select>
+    <button onclick="submitBook()">提交</button>
+    <button onclick="clearForm()">取消</button>
+  </div>
+
+  <!-- 筛选下拉 -->
+  <div>
+    筛选分类：
+    <select id="filterType" onchange="loadBookList()">
+      <option value="">全部图书</option>
+    </select>
+  </div>
+
+  <!-- 图书表格 -->
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>书名</th>
+        <th>作者</th>
+        <th>出版社</th>
+        <th>分类名称</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+    </tbody>
+  </table>
+
+<script>
+const baseUrl = "http://localhost:3000/api";
+
+// 页面加载，获取分类
+window.onload = function(){
+  loadTypeList();
+  loadBookList();
+}
+
+// 加载分类下拉
+async function loadTypeList(){
+  try {
+    const res = await fetch(`${baseUrl}/booktype`);
+    const result = await res.json();
+    const typeList = result.code === 0 ? result.data : [];
+    const typeSelect = document.getElementById('typeSelect');
+    const filterSelect = document.getElementById('filterType');
+    typeSelect.innerHTML = "";
+    filterSelect.innerHTML = `<option value="">全部图书</option>`;
+    typeList.forEach(item=>{
+      typeSelect.innerHTML += `<option value="${item.id}">${item.type_name}</option>`
+      filterSelect.innerHTML += `<option value="${item.id}">${item.type_name}</option>`
+    })
+  } catch (err) {
+    alert("加载分类失败");
+  }
+}
+
+// 加载图书列表
+async function loadBookList(){
+  try {
+    const filterId = document.getElementById('filterType').value;
+    let url = `${baseUrl}/book`;
+    if(filterId) url += `?typeId=${filterId}`
+    const res = await fetch(url);
+    const result = await res.json();
+    const bookList = result.code === 0 ? result.data : [];
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = "";
+    bookList.forEach(item=>{
+      tbody.innerHTML += `
+      <tr>
+        <td>${item.id}</td>
+        <td>${item.book_name}</td>
+        <td>${item.author}</td>
+        <td>${item.press}</td>
+        <td>${item.type_name}</td>
+        <td>
+          <button onclick="editBook(${item.id})">编辑</button>
+          <button onclick="delBook(${item.id})">删除</button>
+        </td>
+      </tr>
+      `
+    })
+  } catch (err) {
+    alert("加载图书列表失败");
+  }
+}
+
+// 提交（新增/修改）
+async function submitBook(){
+  const id = document.getElementById('bookId').value;
+  const data = {
+    book_name: document.getElementById('bookName').value,
+    author: document.getElementById('author').value,
+    press: document.getElementById('press').value,
+    type_id: document.getElementById('typeSelect').value
+  }
+  if(!data.book_name){
+    alert("书名不能为空");
+    return;
+  }
+  try {
+    if(id){
+      // 修改 put
+      await fetch(`${baseUrl}/book/${id}`,{
+        method:"PUT",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(data)
+      })
+    }else{
+      // 新增 post
+      await fetch(`${baseUrl}/book`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(data)
+      })
+    }
+    clearForm();
+    loadBookList();
+  } catch (err) {
+    alert("操作失败");
+  }
+}
+
+// 编辑回填数据（通过ID获取单条记录）
+async function editBook(id){
+  try {
+    const res = await fetch(`${baseUrl}/book/${id}`);
+    const result = await res.json();
+    if(result.code !== 0 || !result.data){
+      alert("图书不存在");
+      return;
+    }
+    const book = result.data;
+    document.getElementById('bookId').value = book.id;
+    document.getElementById('bookName').value = book.book_name;
+    document.getElementById('author').value = book.author;
+    document.getElementById('press').value = book.press;
+    document.getElementById('typeSelect').value = book.type_id;
+  } catch (err) {
+    alert("获取图书信息失败");
+  }
+}
+
+// 删除
+async function delBook(id){
+  if(!confirm("确认删除？")) return;
+  try {
+    await fetch(`${baseUrl}/book/${id}`,{method:"DELETE"})
+    loadBookList();
+  } catch (err) {
+    alert("删除失败");
+  }
+}
+
+// 清空表单
+function clearForm(){
+  document.getElementById('bookId').value = "";
+  document.getElementById('bookName').value = "";
+  document.getElementById('author').value = "";
+  document.getElementById('press').value = "";
+  document.getElementById('typeSelect').value = "";
+}
+</script>
+</body>
+</html>
