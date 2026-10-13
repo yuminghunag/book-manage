@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>新增图书信息</title>
+  <style>
+    body { font-family: "宋体", SimSun, serif; background:#fff; margin:0; padding:20px; }
+    h2 { text-align:center; font-size:22px; font-weight:bold; margin:40px 0; }
+    .form-table { margin:0 auto; border-collapse:separate; border-spacing:15px 25px; font-size:14px; }
+    .form-table td.label { text-align:right; font-weight:bold; white-space:nowrap; }
+    .form-table input, .form-table select { width:220px; height:24px; border:1px solid #7f9db9; font-size:13px; }
+    .req { color:#f00; margin-left:4px; }
+    .btn-bar { text-align:center; margin:40px 0; }
+    .btn { height:26px; padding:0 18px; font-size:13px; cursor:pointer; margin:0 10px; }
+    .btn-save { background:#f0f0f0; border:1px solid #999; }
+    .btn-back { background:#e8f4fd; border:1px solid #7f9db9; }
+  </style>
+</head>
+<body>
+  <h2>新增图书信息</h2>
+
+  <table class="form-table">
+    <tr>
+      <td class="label">图书编号：</td>
+      <td><input type="text" id="bookCode"><span class="req">*</span></td>
+      <td class="label">图书名称：</td>
+      <td><input type="text" id="bookName"><span class="req">*</span></td>
+    </tr>
+    <tr>
+      <td class="label">图书类型：</td>
+      <td><select id="bookType"><option value="">——请选择——</option></select><span class="req">*</span></td>
+      <td class="label">作者：</td>
+      <td><input type="text" id="bookAuthor"></td>
+    </tr>
+    <tr>
+      <td class="label">出版社：</td>
+      <td><input type="text" id="publishPress"></td>
+      <td class="label">是否借阅：</td>
+      <td><select id="borrowed"><option value="0">未借阅</option><option value="1">已借阅</option></select><span class="req">*</span></td>
+    </tr>
+    <tr>
+      <td class="label">入库人：</td>
+      <td><input type="text" id="createdBy" value="系统管理员"><span class="req">*</span></td>
+      <td class="label">入库时间：</td>
+      <td><input type="date" id="creationTime"><span class="req">*</span></td>
+    </tr>
+  </table>
+
+  <div class="btn-bar">
+    <button class="btn btn-save" onclick="saveBook()">保存</button>
+    <button class="btn btn-back" onclick="goBack()">返回</button>
+  </div>
+
+<script>
+const baseUrl = "http://localhost:3000/api";
+
+window.onload = function(){
+  loadTypes();
+  // 入库时间默认当前时间
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth()+1).padStart(2,'0');
+  const d = String(today.getDate()).padStart(2,'0');
+  document.getElementById('creationTime').value = `${y}-${m}-${d}`;
+};
+
+async function loadTypes(){
+  const res = await fetch(`${baseUrl}/booktype`);
+  const result = await res.json();
+  const sel = document.getElementById('bookType');
+  result.data.forEach(t=>{
+    sel.innerHTML += `<option value="${t.id}">${t.typeName}</option>`;
+  });
+}
+
+// 必填验证
+function validate(){
+  const code = document.getElementById('bookCode').value.trim();
+  const name = document.getElementById('bookName').value.trim();
+  const type = document.getElementById('bookType').value;
+  const borrowed = document.getElementById('borrowed').value;
+  const createdBy = document.getElementById('createdBy').value.trim();
+  const creationTime = document.getElementById('creationTime').value;
+  if(!code || !name || !type || borrowed === '' || !createdBy || !creationTime){
+    alert("必填项不能为空！");
+    return false;
+  }
+  return true;
+}
+
+async function saveBook(){
+  if(!validate()) return;
+  const data = {
+    bookCode: document.getElementById('bookCode').value.trim(),
+    bookName: document.getElementById('bookName').value.trim(),
+    bookType: document.getElementById('bookType').value,
+    bookAuthor: document.getElementById('bookAuthor').value.trim(),
+    publishPress: document.getElementById('publishPress').value.trim(),
+    publishDate: document.getElementById('creationTime').value,
+    borrowed: document.getElementById('borrowed').value,
+    createdBy: document.getElementById('createdBy').value.trim(),
+    creationTime: document.getElementById('creationTime').value
+  };
+  const res = await fetch(`${baseUrl}/book`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(data)
+  });
+  const result = await res.json();
+  if(result.code === 0){
+    alert("新增成功！");
+  } else {
+    alert("新增失败！");
+  }
+  location.href = "index.html";
+}
+
+function goBack(){
+  location.href = "index.html";
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>查看图书信息</title>
+  <style>
+    body { font-family: "宋体", SimSun, serif; background:#fff; margin:0; padding:20px; }
+    h2 { text-align:center; font-size:22px; font-weight:bold; margin:40px 0; }
+    .form-table { margin:0 auto; border-collapse:separate; border-spacing:15px 25px; font-size:14px; }
+    .form-table td.label { text-align:right; font-weight:bold; white-space:nowrap; }
+    .form-table input, .form-table select { width:220px; height:24px; border:1px solid #7f9db9; font-size:13px; }
+    .btn-bar { text-align:center; margin:40px 0; }
+    .btn { height:26px; padding:0 18px; font-size:13px; cursor:pointer; }
+    .btn-back { background:#e8f4fd; border:1px solid #7f9db9; }
+  </style>
+</head>
+<body>
+  <h2>查看图书信息</h2>
+
+  <table class="form-table">
+    <tr>
+      <td class="label">图书编号：</td>
+      <td><input type="text" id="bookCode" readonly></td>
+      <td class="label">图书名称：</td>
+      <td><input type="text" id="bookName" readonly></td>
+    </tr>
+    <tr>
+      <td class="label">图书类型：</td>
+      <td><input type="text" id="typeName" readonly></td>
+      <td class="label">作者：</td>
+      <td><input type="text" id="bookAuthor" readonly></td>
+    </tr>
+    <tr>
+      <td class="label">出版社：</td>
+      <td><input type="text" id="publishPress" readonly></td>
+      <td class="label">是否借阅：</td>
+      <td><select id="borrowed" disabled><option value="0">未借阅</option><option value="1">已借阅</option></select></td>
+    </tr>
+    <tr>
+      <td class="label">入库人：</td>
+      <td><input type="text" id="createdBy" readonly></td>
+      <td class="label">入库时间：</td>
+      <td><input type="text" id="creationTime" readonly></td>
+    </tr>
+  </table>
+
+  <div class="btn-bar">
+    <button class="btn btn-back" onclick="goBack()">返回</button>
+  </div>
+
+<script>
+const baseUrl = "http://localhost:3000/api";
+
+window.onload = function(){
+  const id = new URLSearchParams(location.search).get('id');
+  loadBook(id);
+};
+
+async function loadBook(id){
+  const res = await fetch(`${baseUrl}/book/${id}`);
+  const result = await res.json();
+  if(result.code !== 0){ alert("图书不存在"); return; }
+  const b = result.data;
+  document.getElementById('bookCode').value = b.bookCode;
+  document.getElementById('bookName').value = b.bookName;
+  document.getElementById('typeName').value = b.typeName;
+  document.getElementById('bookAuthor').value = b.bookAuthor;
+  document.getElementById('publishPress').value = b.publishPress;
+  document.getElementById('borrowed').value = b.borrowed;
+  document.getElementById('createdBy').value = b.createdBy;
+  document.getElementById('creationTime').value = b.creationTime;
+}
+
+function goBack(){
+  history.back();
+}
+</script>
+</body>
+</html>
